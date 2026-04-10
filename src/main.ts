@@ -69,7 +69,7 @@ function initDatePicker(yearSel: HTMLSelectElement, monthSel: HTMLSelectElement,
   daySel.innerHTML = '<option value="">（選択）</option>';
 
   const currentYear = new Date().getFullYear();
-  
+
   // 年: 1930年〜今年まで
   for (let y = currentYear; y >= 1930; y--) {
     const opt = document.createElement('option');
@@ -79,7 +79,7 @@ function initDatePicker(yearSel: HTMLSelectElement, monthSel: HTMLSelectElement,
     if (y === defaultYear) opt.selected = true;
     yearSel.appendChild(opt);
   }
-  
+
   // 月
   for (let m = 1; m <= 12; m++) {
     const opt = document.createElement('option');
@@ -88,7 +88,7 @@ function initDatePicker(yearSel: HTMLSelectElement, monthSel: HTMLSelectElement,
     if (defaultYear && m === 1) opt.selected = true;
     monthSel.appendChild(opt);
   }
-  
+
   // 日
   for (let d = 1; d <= 31; d++) {
     const opt = document.createElement('option');
@@ -122,7 +122,7 @@ empDay.addEventListener('change', updateEmpAge);
 function setFieldRequired(id: string | HTMLInputElement | HTMLSelectElement, isRequired: boolean) {
   const el = typeof id === 'string' ? document.getElementById(id) as HTMLInputElement | HTMLSelectElement : id;
   if (!el) return;
-  
+
   if (isRequired) {
     el.setAttribute('required', 'true');
   } else {
@@ -185,7 +185,7 @@ function setupFormMode(mode: 'new' | 'update') {
   registrationForm.reset();
   familyContainer.innerHTML = ''; // 家族をリセット
   updateEmpAge();
-  
+
   if (mode === 'new') {
     // 新規登録：すべて必須
     ['empYear', 'empMonth', 'empDay', 'empZip', 'empAddress', 'emgName', 'emgRelation', 'emgPhone', 'emgZip', 'emgAddress'].forEach(id => {
@@ -207,7 +207,7 @@ btnNew.addEventListener('click', () => {
   formTypeInput.value = 'new';
   formTitle.textContent = '✨ 新規登録フォーム';
   setupFormMode('new');
-  
+
   // 新規登録の時は初期値を1988/01/01にする
   empYear.value = "1988";
   empMonth.value = "01";
@@ -245,7 +245,7 @@ async function searchAddress(zipInput: HTMLInputElement, addressInput: HTMLInput
     alert('郵便番号はハイフンなしの7桁の数字で入力してください。（例：1000001）');
     return;
   }
-  
+
   try {
     const res = await fetch(`https://zipcloud.ibsnet.co.jp/api/search?zipcode=${zip}`);
     const data = await res.json();
@@ -301,11 +301,11 @@ window.addEventListener('click', (e) => {
 function addFamilyField() {
   familyCount++;
   const fieldId = `family-${familyCount}`;
-  
+
   const div = document.createElement('div');
   div.className = 'family-item slide-in';
   div.id = fieldId;
-  
+
   div.innerHTML = `
     <div class="family-item-header">
       <h4>ご家族 ${familyCount}</h4>
@@ -368,16 +368,16 @@ function addFamilyField() {
       </div>
     </div>
   `;
-  
+
   familyContainer.appendChild(div);
 
   const ySel = div.querySelector('.fam-year') as HTMLSelectElement;
   const mSel = div.querySelector('.fam-month') as HTMLSelectElement;
   const dSel = div.querySelector('.fam-day') as HTMLSelectElement;
   const famAgeDisplay = div.querySelector('.fam-age-display') as HTMLDivElement;
-  
+
   initDatePicker(ySel, mSel, dSel, null); // ここも空をデフォルトにする
-  
+
   function updateFamAge() {
     const age = calculateAge(ySel.value, mSel.value, dSel.value);
     if (age !== null) {
@@ -404,7 +404,7 @@ function addFamilyField() {
       ySel.removeAttribute('required');
       mSel.removeAttribute('required');
       dSel.removeAttribute('required');
-      
+
       ageGroup.style.display = 'block';
       ageInput.setAttribute('required', 'true');
     } else {
@@ -442,50 +442,50 @@ addFamilyBtn.addEventListener('click', addFamilyField);
 // --- フォーム送信 ---
 registrationForm.addEventListener('submit', async (e: Event) => {
   e.preventDefault();
-  
+
   submitBtn.disabled = true;
   submitBtn.classList.add('loading');
   submitText.style.display = 'none';
   submitLoader.style.display = 'block';
   errorMessage.style.display = 'none';
-  
+
   try {
     const formData = new FormData(registrationForm);
-    
+
     // 従業員の誕生日を結合 (空なら空)
     const empY = formData.get('empYear');
     const empM = formData.get('empMonth');
     const empD = formData.get('empDay');
     const empBirthDateStr = (empY && empM && empD) ? `${empY}-${empM}-${empD}` : '';
-    
+
     // 家族情報
     const families: any[] = [];
     const familyItems = document.querySelectorAll('.family-item');
-    
+
     familyItems.forEach((item) => {
       const relationSelect = item.querySelector('.fam-relation') as HTMLSelectElement;
       const radioChecked = item.querySelector('input[type="radio"]:checked') as HTMLInputElement;
-      
+
       const checkUnknown = item.querySelector('.unknown-age-check') as HTMLInputElement;
       const ageInput = item.querySelector('.fam-approx-age') as HTMLInputElement;
-      
+
       const ySel = item.querySelector('.fam-year') as HTMLSelectElement;
       const mSel = item.querySelector('.fam-month') as HTMLSelectElement;
       const dSel = item.querySelector('.fam-day') as HTMLSelectElement;
-      
+
       // エラーで弾かれないよう、取得できたものは何でも送る超安全設計
       let relationVal = relationSelect ? relationSelect.value : "未入力";
       let livingTogether = radioChecked ? radioChecked.value : "不明";
-      
+
       let birth = "";
       if (checkUnknown && checkUnknown.checked) {
         birth = "不明(" + (ageInput ? ageInput.value : "") + "歳)";
       } else {
-        birth = (ySel && ySel.value && mSel && mSel.value && dSel && dSel.value) 
-                ? `${ySel.value}-${mSel.value}-${dSel.value}` 
-                : '';
+        birth = (ySel && ySel.value && mSel && mSel.value && dSel && dSel.value)
+          ? `${ySel.value}-${mSel.value}-${dSel.value}`
+          : '';
       }
-      
+
       // 家族の枠が存在すれば確実にデータとして送る
       if (relationSelect) {
         families.push({
@@ -524,15 +524,15 @@ registrationForm.addEventListener('submit', async (e: Event) => {
     });
 
     const result = await response.json();
-    
+
     if (result.status === 'success') {
-      window.scrollTo(0,0);
+      window.scrollTo(0, 0);
       registrationForm.style.display = 'none';
       successMessage.style.display = 'flex';
     } else {
       throw new Error(result.message || 'Server returned error');
     }
-    
+
   } catch (error) {
     console.error('送信エラー:', error);
     errorMessage.style.display = 'block';
@@ -543,3 +543,4 @@ registrationForm.addEventListener('submit', async (e: Event) => {
     submitLoader.style.display = 'none';
   }
 });
+
