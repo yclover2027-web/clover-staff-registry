@@ -1,4 +1,4 @@
-const GAS_URL = "https://script.google.com/macros/s/AKfycbymKcGhHmk30LtboYxX8zb7oGTQsF2dFrUJ6gBc2Y4RLmKec4cApQOMs0WkL-9ExZi0-g/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbzSmzgZhynNx8i6Xjq6qpednQEjULRAFcHG_8E0eOyCOZJynMlH_oA4ho7h7Bf21L94Lw/exec";
 
 // DOM Elements
 const loginScreen = document.getElementById('loginScreen') as HTMLDivElement;
@@ -76,6 +76,54 @@ function calculateAge(birthDateStr: string): string {
     age--;
   }
   return String(age);
+}
+
+// ヘルパー：年齢計算
+function calculateAge(birthDateStr: string): string {
+  if (!birthDateStr) return "不明";
+  if (birthDateStr.includes("不明")) return birthDateStr; // 手入力用
+
+  const birthDate = new Date(birthDateStr);
+  if (isNaN(birthDate.getTime())) return "不明";
+
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const m = today.getMonth() - birthDate.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+    age--;
+  }
+  return String(age);
+}
+
+// ヘルパー：勤続年数計算
+function calculateTenure(joinDateStr: string, leaveDateStr: string): string {
+  if (!joinDateStr) return "";
+  const joinDate = new Date(joinDateStr);
+  if (isNaN(joinDate.getTime())) return "";
+
+  const endDate = (leaveDateStr && !isNaN(new Date(leaveDateStr).getTime())) ? new Date(leaveDateStr) : new Date();
+
+  let years = endDate.getFullYear() - joinDate.getFullYear();
+  let months = endDate.getMonth() - joinDate.getMonth();
+  
+  if (months < 0) {
+    years--;
+    months += 12;
+  }
+  if (endDate.getDate() < joinDate.getDate()) {
+    months--;
+    if (months < 0) {
+      years--;
+      months += 12;
+    }
+  }
+
+  if (years === 0 && months === 0) return "（1ヶ月未満）";
+  let result = "（勤続 ";
+  if (years > 0) result += `${years}年`;
+  if (months > 0) result += `${months}ヶ月`;
+  result += "）";
+  return result;
 }
 
 // 金額フォーマット
@@ -173,8 +221,13 @@ function selectEmployee(empId: string) {
   const age = calculateAge(emp['生年月日']);
   const formattedBirth = formatDateString(emp['生年月日']);
   detailBirth.textContent = `${formattedBirth} (${age}歳)`;
-  detailJoinDate.textContent = formatDateString(emp['入社日']);
-  detailLeaveDate.textContent = formatDateString(emp['退社日']);
+  
+  const formattedJoin = formatDateString(emp['入社日']);
+  const formattedLeave = formatDateString(emp['退社日']);
+  const tenure = calculateTenure(emp['入社日'], emp['退社日']);
+  
+  detailJoinDate.textContent = `${formattedJoin} ${tenure}`;
+  detailLeaveDate.textContent = formattedLeave;
   detailAddress.textContent = emp['住所'] || '-';
 
   // 緊急連絡先
@@ -242,8 +295,15 @@ function selectEmployee(empId: string) {
 
       const applyDateKey = Object.keys(sal).find(k => k.includes('適用') || k.includes('変更') || k.includes('日')) || '変更・適用日';
 
+      // 履歴ID（データ削除用）
+      const recordIdKey = Object.keys(sal).find(k => k.includes('ID') && !k.includes('従業員')) || '履歴ID';
+      const recordId = sal[recordIdKey] || '';
+
       li.innerHTML = `
-        <div class="sub-item-title">${formatDateString(sal[applyDateKey])} 改定</div>
+        <div class="sub-item-title" style="display: flex; justify-content: space-between; width: 100%;">
+          <span>${formatDateString(sal[applyDateKey])} 改定</span>
+          <button class="delete-sal-btn" data-id="${recordId}" style="background: none; border: none; color: #EF4444; cursor: pointer; font-size: 0.85rem; font-weight: bold;">🗑️ 削除</button>
+        </div>
         <div class="info-row"><span class="info-label">所属店舗</span><span class="info-value">${store}</span></div>
         <div class="info-row"><span class="info-label">月給 / 時給</span><span class="info-value">${formatCurrency(monthly)} / ${formatCurrency(hourly)}</span></div>
         <div class="info-row"><span class="info-label">年収</span><span class="info-value">${formatCurrency(yearly)}</span></div>
@@ -251,8 +311,51 @@ function selectEmployee(empId: string) {
       `;
       salaryList.appendChild(li);
     });
+
+    // 削除ボタンのイベント登録
+    const deleteBtns = salaryList.querySelectorAll('.delete-sal-btn');
+    deleteBtns.forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const recordId = (e.target as HTMLButtonElement).getAttribute('data-id');
+        if (!recordId) {
+          alert('削除用IDが見つかりません');
+          return;
+        }
+        if (confirm("本当にこの給与・人事履歴を削除しますか？\n（この操作は取り消せません）")) {
+          await deleteSalaryRecord(recordId);
+        }
+      });
+    });
   } else {
     noSalaryMsg.style.display = 'block';
+  }
+}
+
+// 給与履歴の削除API通信
+async function deleteSalaryRecord(recordId: string) {
+  globalLoader.style.display = 'flex';
+  try {
+    const payload = {
+      action: "deleteSalaryRecord",
+      password: currentPassword,
+      data: { recordId }
+    };
+    const res = await fetch(GAS_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify(payload)
+    });
+    const result = await res.json();
+    if (result.status === "success") {
+      alert("削除しました！");
+      await loadDashboardData(); // 再描画
+    } else {
+      throw new Error(result.message);
+    }
+  } catch (err: any) {
+    alert("削除エラー: " + err.message);
+  } finally {
+    globalLoader.style.display = 'none';
   }
 }
 

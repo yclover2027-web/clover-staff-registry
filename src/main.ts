@@ -1,7 +1,7 @@
 import './style.css'
 
 // GASのURL
-const GAS_URL = "https://script.google.com/macros/s/AKfycbymKcGhHmk30LtboYxX8zb7oGTQsF2dFrUJ6gBc2Y4RLmKec4cApQOMs0WkL-9ExZi0-g/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbzSmzgZhynNx8i6Xjq6qpednQEjULRAFcHG_8E0eOyCOZJynMlH_oA4ho7h7Bf21L94Lw/exec";
 
 // --- DOM Elements ---
 const topMenu = document.getElementById('topMenu') as HTMLDivElement;
