@@ -96,7 +96,7 @@ function initDatePicker(yearSel: HTMLSelectElement, monthSel: HTMLSelectElement,
 const empYear = document.getElementById('empYear') as HTMLSelectElement;
 const empMonth = document.getElementById('empMonth') as HTMLSelectElement;
 const empDay = document.getElementById('empDay') as HTMLSelectElement;
-const empAgeDisplay = document.getElementById('empAgeDisplay') as HTMLSpanElement;
+const empAgeDisplay = document.getElementById('empAgeDisplay') as HTMLDivElement;
 
 initDatePicker(empYear, empMonth, empDay, 1988);
 
@@ -230,8 +230,8 @@ function addFamilyField() {
           <select class="fam-year" required></select> <span class="date-label">年</span>
           <select class="fam-month" required></select> <span class="date-label">月</span>
           <select class="fam-day" required></select> <span class="date-label">日</span>
-          <span class="fam-age-display" style="color: #0D9488; font-weight: 700; margin-left: 0.5rem; white-space: nowrap;"></span>
         </div>
+        <div class="fam-age-display" style="color: #0D9488; font-weight: 700; margin-top: 0.5rem; text-align: right; font-size: 0.95rem;"></div>
       </div>
       
       <div class="form-group flex-1" id="approxAgeGroup-${familyCount}" style="display:none;">
@@ -267,7 +267,7 @@ function addFamilyField() {
   const ySel = div.querySelector('.fam-year') as HTMLSelectElement;
   const mSel = div.querySelector('.fam-month') as HTMLSelectElement;
   const dSel = div.querySelector('.fam-day') as HTMLSelectElement;
-  const famAgeDisplay = div.querySelector('.fam-age-display') as HTMLSpanElement;
+  const famAgeDisplay = div.querySelector('.fam-age-display') as HTMLDivElement;
   initDatePicker(ySel, mSel, dSel, 1988);
   
   function updateFamAge() {
